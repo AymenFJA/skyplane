@@ -11,6 +11,9 @@ from skyplane.compute.gcp.gcp_cloud_provider import GCPCloudProvider
 from skyplane.compute.gcp.gcp_server import GCPServer
 from skyplane.compute.ibmcloud.ibmcloud_auth import IBMCloudAuthentication
 from skyplane.compute.ibmcloud.ibmcloud_provider import IBMCloudProvider
+from skyplane.compute.openstack.openstack_server import OpenStackServer
+from skyplane.compute.openstack.openstack_auth import OpenStackAuthentication
+from skyplane.compute.openstack.openstack_provider import OpenStackProvider
 from skyplane.compute.server import Server, ServerState
 
 __all__ = [
@@ -28,5 +31,8 @@ __all__ = [
     "GCPCloudProvider",
     "IBMCloudAuthentication",
     "IBMCloudProvider",
+    "OpenStackServer",
+    "OpenStackAuthentication",
+    "OpenStackProvider",
     "GCPServer",
 ]

@@ -1,3 +1,4 @@
+import os
 import openstack
 
 from typing import Optional
@@ -22,12 +23,12 @@ class OpenStackAuthentication:
         else:
             self.config = SkyplaneConfig.load_config(config_path)
 
-    self._auth_url = os.environ.get('JET_OS_AUTH_URL')
-    self._auth_type = os.environ.get('JET_OS_AUTH_TYPE')
-    self._compute_api_version = 2
-    self._identity_interface = os.environ.get('JET_OS_INTERFACE')
-    self._application_credential_secret = os.environ.get('JET_OS_APPLICATION_CREDENTIAL_SECRET')
-    self._application_credential_id = os.environ.get('JET_OS_APPLICATION_CREDENTIAL_ID')
+        self._auth_url = os.environ.get('JET_OS_AUTH_URL')
+        self._auth_type = os.environ.get('JET_OS_AUTH_TYPE')
+        self._compute_api_version = 2
+        self._identity_interface = os.environ.get('JET_OS_INTERFACE')
+        self._application_credential_secret = os.environ.get('JET_OS_APPLICATION_CREDENTIAL_SECRET')
+        self._application_credential_id = os.environ.get('JET_OS_APPLICATION_CREDENTIAL_ID')
 
 
     def get_openstack_client(self):

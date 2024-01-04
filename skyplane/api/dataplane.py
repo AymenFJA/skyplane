@@ -156,6 +156,7 @@ class Dataplane:
             is_azure_used = any(n.region_tag.startswith("azure:") for n in self.topology.get_gateways())
             is_gcp_used = any(n.region_tag.startswith("gcp:") for n in self.topology.get_gateways())
             is_ibmcloud_used = any(n.region_tag.startswith("ibmcloud:") for n in self.topology.get_gateways())
+            is_openstack_used = any(n.region_tag.startswith("openstack:") for n in self.topology.get_gateways())
 
             # create VMs from the topology
             for node in self.topology.get_gateways():
@@ -172,7 +173,7 @@ class Dataplane:
                 )
 
             # initialize clouds
-            self.provisioner.init_global(aws=is_aws_used, azure=is_azure_used, gcp=is_gcp_used, ibmcloud=is_ibmcloud_used)
+            self.provisioner.init_global(aws=is_aws_used, azure=is_azure_used, gcp=is_gcp_used, ibmcloud=is_ibmcloud_used, openstack=is_openstack_used)
 
             # provision VMs
             uuids = self.provisioner.provision(

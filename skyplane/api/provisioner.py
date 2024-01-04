@@ -52,6 +52,7 @@ class Provisioner:
         gcp_auth: Optional[compute.GCPAuthentication] = None,
         host_uuid: Optional[str] = None,
         ibmcloud_auth: Optional[compute.IBMCloudAuthentication] = None,
+        openstack_auth: Optional[compute.OpenStackAuthentication] = None,
     ):
         """
         :param aws_auth: authentication information for aws
@@ -64,12 +65,14 @@ class Provisioner:
         :type host_uuid: string
         :param ibmcloud_auth: authentication information for aws
         :type ibmcloud_auth: compute.IBMCloudAuthentication
+        :type openstack_auth: compute.OpenStackAuthentication
         """
         self.aws_auth = aws_auth
         self.azure_auth = azure_auth
         self.gcp_auth = gcp_auth
         self.host_uuid = host_uuid
         self.ibmcloud_auth = ibmcloud_auth
+        self.openstack_auth = openstack_auth
         self._make_cloud_providers()
         self.temp_nodes: Set[compute.Server] = set()  # temporary area to store nodes that should be terminated upon exit
         self.pending_provisioner_tasks: List[ProvisionerTask] = []
@@ -85,8 +88,9 @@ class Provisioner:
         self.azure = compute.AzureCloudProvider(auth=self.azure_auth)
         self.gcp = compute.GCPCloudProvider(auth=self.gcp_auth)
         self.ibmcloud = compute.IBMCloudProvider(auth=self.ibmcloud_auth)
+        self.openstack = compute.OpenStackCloudProvider(auth=self.openstack_auth)
 
-    def init_global(self, aws: bool = True, azure: bool = True, gcp: bool = True, ibmcloud: bool = True):
+    def init_global(self, aws: bool = True, azure: bool = True, gcp: bool = True, ibmcloud: bool = True, openstack: bool = True):
         """
         Initialize the global cloud providers by configuring with credentials
 
@@ -98,6 +102,8 @@ class Provisioner:
         :type gcp: bool
         :param ibmcloud: whether to configure ibmcloud (default: True)
         :type ibmcloud: bool
+        :param openstack: whether to configure openstack (default: True)
+        :type openstack: bool
         """
         logger.fs.info(f"[Provisioner.init_global] Initializing global resources for aws={aws}, azure={azure}, gcp={gcp}")
         jobs = []
@@ -110,6 +116,8 @@ class Provisioner:
             jobs.append(self.gcp.setup_global)
         if ibmcloud:
             jobs.append(self.ibmcloud.setup_global)
+        if openstack:
+            jobs.append(self.openstack.setup_global)
 
         do_parallel(lambda fn: fn(), jobs, spinner=False)
 
@@ -174,6 +182,9 @@ class Provisioner:
             elif task.cloud_provider == "ibmcloud":
                 assert self.ibmcloud.auth.enabled(), "IBM Cloud credentials not configured"
                 server = self.ibmcloud.provision_instance(task.region, task.vm_type, tags=task.tags)
+            elif task.cloud_provider == "openstack":
+                assert self.openstack.auth.enabled(), "OpenStack credentials not configured"
+                server = self.openstack.provision_instance(task.region, task.vm_type, tags=task.tags)
             else:
                 raise NotImplementedError(f"Unknown provider {task.cloud_provider}")
         logger.fs.debug(f"[Provisioner._provision_task] Provisioned {server} in {t.elapsed:.2f}s")
@@ -206,6 +217,8 @@ class Provisioner:
         azure_provisioned = any([task.cloud_provider == "azure" for task in provision_tasks])
         gcp_provisioned = any([task.cloud_provider == "gcp" for task in provision_tasks])
         ibmcloud_provisioned = any([task.cloud_provider == "ibmcloud" for task in provision_tasks])
+        openstack_provisioned = any([task.cloud_provider == "openstack" for task in provision_tasks])
+        openstack_regions = set([task.region for task in provision_tasks if task.cloud_provider == "openstack"])
 
         # configure regions
         if aws_provisioned:
@@ -223,6 +236,16 @@ class Provisioner:
                 desc="Configuring IBM Cloud regions",
             )
             logger.fs.info(f"[Provisioner.provision] Configured IBM Cloud regions {ibmcloud_regions}")
+        
+        if openstack_provisioned:
+            do_parallel(
+                self.openstack.setup_region,
+                list(set(openstack_regions)),
+                spinner=spinner,
+                spinner_persist=False,
+                desc="Configuring OpenStack regions",
+            )
+            logger.fs.info(f"[Provisioner.provision] Configured OpenStack regions {openstack_regions}")
 
         # provision VMs
         logger.fs.info(f"[Provisioner.provision] Provisioning {len(provision_tasks)} VMs")
@@ -303,6 +326,8 @@ class Provisioner:
         azure_deprovisioned = any([s.provider == "azure" for s in servers])
         gcp_deprovisioned = any([s.provider == "gcp" for s in servers])
         ibmcloud_deprovisioned = any([s.provider == "ibmcloud" for s in servers])
+        openstack_deprovisioned = any([s.provider == "openstack" for s in servers])
+
         if azure_deprovisioned:
             logger.warning("Azure deprovisioning is very slow. Please be patient.")
         logger.fs.info(f"[Provisioner.deprovision] Deprovisioning {len(servers)} VMs")

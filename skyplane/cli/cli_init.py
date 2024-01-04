@@ -78,6 +78,18 @@ def load_cloudflare_config(config: SkyplaneConfig, non_interactive: bool = False
     return config
 
 
+def load_openstack_config(config: SkyplaneConfig, non_interactive: bool = False) -> SkyplaneConfig:
+    if non_interactive or typer.confirm("    Do you want to configure Cloudflare support in Skyplane?", default=True):
+        if "JET_OS_AUTH_URL" in os.environ and "JET_OS_AUTH_TYPE" in os.environ:
+            config.openstack_auth_url = os.environ["JET_OS_AUTH_URL"]
+            config.openstack_auth_type = os.environ["JET_OS_AUTH_TYPE"]
+            typer.secho(f"Read OpenStack credentials for enviornment variables.", fg="blue")
+        else:
+            config.openstack_auth_url = typer.prompt("    Enter the OpenStack auth URL")
+            config.openstack_auth_type = typer.prompt("    Enter the OpenStack auth type")
+    return config
+
+
 def load_azure_config(config: SkyplaneConfig, force_init: bool = False, non_interactive: bool = False) -> SkyplaneConfig:
     def clear_azure_config(config, verbose=True):
         if verbose:
@@ -476,10 +488,12 @@ def init(
     reinit_azure: bool = False,
     reinit_gcp: bool = False,
     reinit_ibm: bool = False,
+    reinit_openstack: bool = False,
     reinit_cloudflare: bool = False,
     disable_config_aws: bool = False,
     disable_config_azure: bool = False,
     disable_config_gcp: bool = False,
+    disable_config_openstack: bool = False,
     disable_config_ibm: bool = True,  # TODO: eventuall enable IBM
     disable_config_cloudflare: bool = False,
 ):
@@ -544,6 +558,11 @@ def init(
         typer.secho("\n(4) Configuring Cloudflare R2:", fg="yellow", bold=True)
         if not disable_config_cloudflare:
             cloud_config = load_cloudflare_config(cloud_config, non_interactive=non_interactive)
+
+    if not reinit_openstack and not disable_config_openstack:
+        typer.secho("\n(4) Configuring OpenStack:", fg="yellow", bold=True)
+        if not disable_config_openstack:
+            cloud_config = load_openstack_config(cloud_config, non_interactive=non_interactive)
 
     # load IBMCloud config
     if not disable_config_ibm and not reinit_ibm:

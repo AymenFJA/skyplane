@@ -39,6 +39,8 @@ class ObjectStore:
             return f"s3://{bucket_name}"
         elif provider == "gcp":
             return f"gs://{bucket_name}"
+        elif provider == "openstack":
+            return f"https://js2.jetstream-cloud.org:8001/swift/v1/s3-bucket/{bucket_name}"
         else:
             raise NotImplementedError(f"Provider {provider} not implemented")
 

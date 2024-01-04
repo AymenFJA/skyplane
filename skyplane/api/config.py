@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 
 from typing import Optional
@@ -61,6 +62,21 @@ class IBMCloudConfig(AuthenticationConfig):
         # pytype: enable=attribute-error
 
 
+@dataclass
+class OpenStackConfig(AuthenticationConfig):
+    auth_url = os.environ.get('JET_OS_AUTH_URL')
+    auth_type = os.environ.get('JET_OS_AUTH_TYPE')
+    compute_api_version = 2
+    identity_interface = os.environ.get('JET_OS_INTERFACE')
+    application_credential_secret = os.environ.get('JET_OS_APPLICATION_CREDENTIAL_SECRET')
+    application_credential_id = os.environ.get('JET_OS_APPLICATION_CREDENTIAL_ID')
+
+    def make_auth_provider(self) -> compute.OpenStackAuthentication:
+        # pytype: disable=attribute-error
+        return compute.OpenStackAuthentication(config=self)  # type: ignore
+        # pytype: enable=attribute-error
+
+
 @dataclass(frozen=True)
 class TransferConfig:
     autoterminate_minutes: int = 15
@@ -82,11 +98,13 @@ class TransferConfig:
     azure_use_spot_instances: bool = False
     gcp_use_spot_instances: bool = False
     ibmcloud_use_spot_instances: bool = False
+    openstack_use_spot_instances: bool = False
 
     aws_instance_class: str = "m5.8xlarge"
     azure_instance_class: str = "Standard_D2_v5"
     gcp_instance_class: str = "n2-standard-16"
     ibmcloud_instance_class: str = "bx2-2x8"
+    openstack_instance_class: str = "m3.small"
     gcp_use_premium_network: bool = True
 
     aws_vcpu_file: Path = aws_quota_path

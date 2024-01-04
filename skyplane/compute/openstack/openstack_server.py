@@ -5,7 +5,7 @@ import warnings
 from cryptography.utils import CryptographyDeprecationWarning
 from typing import Dict, Optional
 
-from skyplane.compute.aws.aws_key_manager import AWSKeyManager
+from skyplane.compute.openstack.openstack_key_manager import OpenStackKeyManager
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=CryptographyDeprecationWarning)
